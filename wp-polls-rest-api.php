@@ -22,7 +22,7 @@ function get_poll_template_by_me($poll_id, $display_loading = true)
     // Temp Poll Result
     $temp_pollvote = '';
     // Get Poll Question Data
-    $poll_question = $wpdb->get_row( $wpdb->prepare( "SELECT pollq_id, pollq_question, pollq_totalvotes, pollq_timestamp, pollq_expiry, pollq_multiple, pollq_totalvoters FROM $wpdb->pollsq WHERE pollq_id = %d LIMIT 1", $poll_id ) );
+    $poll_question = $wpdb->get_row( $wpdb->prepare( "SELECT pollq_id, pollq_question, pollq_totalvotes, pollq_active, pollq_timestamp, pollq_expiry, pollq_multiple, pollq_totalvoters FROM $wpdb->pollsq WHERE pollq_id = %d LIMIT 1", $poll_id ) );
     // Poll Question Variables
     $poll_question_text = wp_kses_post( removeslashes( $poll_question->pollq_question ) );
     $poll_question_id = (int) $poll_question->pollq_id;
@@ -49,9 +49,22 @@ function get_poll_template_by_me($poll_id, $display_loading = true)
     // Get Poll Answers Data
     list($order_by, $sort_order) = _polls_get_ans_sort();
     $poll_answers = $wpdb->get_results( $wpdb->prepare( "SELECT polla_aid, polla_qid, polla_answers, polla_votes FROM $wpdb->pollsa WHERE polla_qid = %d ORDER BY $order_by $sort_order", $poll_question_id ) );
+    //$data['template_question'] = $template_question;
+    $data['multiple_ans'] = $poll_multiple_ans;
     $data['question'] = $poll_question->pollq_question;
     $data['id'] = $poll_question->pollq_id;
-   $data['answers'] = $poll_answers;
+    $data['answers'] = $poll_answers;
+    $poll_active= (int) $poll_question->pollq_active;
+		if($poll_active === 1) {
+            $data['status'] = 'Open';
+        } elseif($poll_active === -1) {
+            //_e('Future', 'wp-polls');
+            $data['status']= 'Future';
+        } else {
+            //_e('Closed', 'wp-polls');
+            $data['status']= 'Closed';
+        }
+
     return $data;
 }
 function display_pollresult_by_me($poll_id, $user_voted = '', $display_loading = true) {
@@ -145,13 +158,7 @@ function get_all_polls(){
 	$data = [];
 	foreach($polls as $poll) {
 		$poll_id = (int) $poll->pollq_id;
-		/*$poll_question = removeslashes($poll->pollq_question);
-		$poll_date = mysql2date(sprintf(__('%s @ %s', 'wp-polls'), get_option('date_format'), get_option('time_format')), gmdate('Y-m-d H:i:s', $poll->pollq_timestamp));
-		$poll_totalvotes = (int) $poll->pollq_totalvotes;
-		$poll_totalvoters = (int) $poll->pollq_totalvoters;
-		$poll_active = (int) $poll->pollq_active;
-		$poll_expiry = trim($poll->pollq_expiry);*/
-		$data[] = get_poll_template_by_me($poll_id, false);
+		$data[] = get_poll_template_by_me($poll_id, true);
 	}
 	return $data;
 }
