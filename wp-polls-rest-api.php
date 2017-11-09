@@ -119,6 +119,11 @@ function display_pollresult_by_me($poll_id, $user_voted = '', $display_loading =
     return  $poll_answers;
 }
 add_action( 'rest_api_init', function () {
+	$args = array(
+		'methods' => WP_REST_Server::READABLE,
+		'callback' => 'get_all_polls',
+	);
+	register_rest_route( 'wp/v2', '/polls/', $args );
     register_rest_route( 'wp/v2', '/poll/', 
         array(
             array(
@@ -133,6 +138,25 @@ add_action( 'rest_api_init', function () {
         )
     );
 });
+
+function get_all_polls(){
+	global $wpdb;
+	$polls = $wpdb->get_results( "SELECT * FROM $wpdb->pollsq  ORDER BY pollq_timestamp DESC" );
+	$data = [];
+	foreach($polls as $poll) {
+		$poll_id = (int) $poll->pollq_id;
+		/*$poll_question = removeslashes($poll->pollq_question);
+		$poll_date = mysql2date(sprintf(__('%s @ %s', 'wp-polls'), get_option('date_format'), get_option('time_format')), gmdate('Y-m-d H:i:s', $poll->pollq_timestamp));
+		$poll_totalvotes = (int) $poll->pollq_totalvotes;
+		$poll_totalvoters = (int) $poll->pollq_totalvoters;
+		$poll_active = (int) $poll->pollq_active;
+		$poll_expiry = trim($poll->pollq_expiry);*/
+		$data[] = get_poll_template_by_me($poll_id, false);
+	}
+	return $data;
+}
+
+
 function get_polls(WP_REST_Request $request){
     $params = $request->get_params();
     // return get_yop_poll_meta(2, 'options', true );
@@ -154,7 +178,8 @@ function post_polls( $request ){
         // Ensure Poll ID Is Valid
         if($poll_id === 0) {
             _e('Invalid Poll ID', 'wp-polls');
-            exit();
+            gexit();
+            //return get_poll(0,false)
         }
        
         // Which View
