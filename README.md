@@ -7,6 +7,10 @@ original version by 7aduta  : https://gist.github.com/7aduta/2bfe5788fa2186255eb
 
 #### wp-json/wp/v2/polls ####
 
+
+Small change compare to the original Wp-Polls plugins
+The voting is base by user_login instead of display_name becuwe username can't be change.
+
 GET all polls , is return a return array
 - question (string name)
 - - id
